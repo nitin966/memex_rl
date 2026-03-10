@@ -72,7 +72,20 @@ class ToolParser:
         has_close = self._CLOSE_TAG in raw_output
 
         if not has_open and not has_close:
-            # No tool call tags at all — entire output is thinking
+            # Fallback for small models: NO tags generated, just markdown JSON blocks
+            json_fallback = re.search(r"```json\s*(.*?)\s*```", raw_output, re.DOTALL)
+            if json_fallback:
+                json_str = json_fallback.group(1).strip()
+                result.thinking = raw_output[:json_fallback.start()].strip()
+                
+                tool_call, json_errors = self._parse_tool_json(json_str)
+                # Silently accept if the fallback block is completely valid JSON
+                if tool_call and not json_errors:
+                    result.tool_call = tool_call
+                    result.format_errors = [] 
+                    return result
+
+            # No tool call tags and no valid markdown JSON fallback found
             result.thinking = raw_output.strip()
             errors.append("No <tool_call> tags found in output.")
             result.format_errors = errors

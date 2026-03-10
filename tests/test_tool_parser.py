@@ -108,6 +108,19 @@ class TestToolParser:
         assert any("No <tool_call> tags" in e for e in result.format_errors)
         assert result.thinking == "I'm just thinking out loud."
 
+    def test_parse_tagless_markdown_json_fallback(self):
+        raw = (
+            'I forgot the XML tags but here is the JSON.\n'
+            '```json\n'
+            '{"name": "execute_action", "arguments": {"action": "look"}}\n'
+            '```'
+        )
+        result = self.parser.parse(raw)
+        assert result.tool_call is not None
+        assert result.tool_call.name == "execute_action"
+        assert len(result.format_errors) == 0
+        assert "forgot the XML tags" in result.thinking
+
     def test_error_open_without_close(self):
         # We updated the parser to silently auto-close these to support 
         # smaller LLMs that stop generating prematurely, avoiding P_format penalties.
