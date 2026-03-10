@@ -1,0 +1,25 @@
+# Memex(RL) Default Configuration
+# Used for local testing with Ollama
+
+agent:
+  max_steps: 100
+  context_window: 32768
+  threshold: 8000
+  summary_max_tokens: 300
+  temperature: 0.7
+  max_generation_tokens: 4096
+
+llm:
+  backend: "openai"           # OpenAI-compatible (works with Ollama)
+  model: "qwen2.5:7b"
+  base_url: "http://localhost:11434/v1"
+  api_key: "ollama"
+
+memory:
+  store: "dict"               # "dict" (in-memory), "redis"
+  redis_url: "redis://localhost:6379"
+
+rewards:
+  alpha_context: 0.3
+  alpha_redundancy: 0.3
+  alpha_format: 0.3
