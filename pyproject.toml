@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "memex-rl"
+version = "0.1.0"
+description = "Memex(RL): Scaling Long-Horizon LLM Agents via Indexed Experience Memory"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+
+dependencies = [
+    "pydantic>=2.0",
+    "tiktoken>=0.7.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+redis = ["redis>=5.0"]
+rocksdb = ["python-rocksdb>=0.3"]
+llm = [
+    "openai>=1.0",
+    "vllm>=0.6.0",
+]
+training = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "accelerate>=0.30",
+    "trl>=0.8",
+    "bitsandbytes>=0.43",
+]
+alfworld = [
+    "alfworld>=0.3",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+]
+all = ["memex-rl[redis,rocksdb,llm,training,alfworld,dev]"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
