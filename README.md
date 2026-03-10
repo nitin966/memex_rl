@@ -99,13 +99,18 @@ pip install -e ".[training]"
 ## Usage and Integration
 
 ### Local Agent Evaluation
-The framework is designed to facilitate rapid local prototyping. It includes universal, OpenAI-compatible backend connectors supporting arbitrary API endpoints, with native fallback defaults optimized for local daemons (e.g., `Ollama`, `vLLM`).
+You can run the Memex agent entirely locally on your Mac/PC using Ollama. (Tested successfully on Apple Silicon M3 with `qwen2.5:3b`).
 
-Execute the 1000-document context stress test using a local inference endpoint:
+**1. Start Ollama and pull a model:**
 ```bash
-python scripts/run_agent.py \
-    --env stress_test \
-    --model qwen2.5:7b \
+ollama run qwen2.5:3b
+```
+
+**2. Run the Stress Test Environment:**
+The stress test drops the agent into a 1,000-document nested directory. The agent must discover the layout, aggressively compress its findings into L2 memory to avoid context overflow, and use `grep/cat` to locate the target.
+
+```bash
+python scripts/run_agent.py --env stress_test --model qwen2.5:3b \
     --base-url "http://localhost:11434/v1" \
     --threshold 8000
 ```

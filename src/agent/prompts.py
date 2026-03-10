@@ -70,6 +70,22 @@ MANDATORY PRACTICES:
 - After compression: compressed messages are DELETED from context. The ONLY way to access them is ReadExperience.
 - If you need past information, you MUST call ReadExperience(db_index)
 
+##############################################################################
+# FEW-SHOT EXAMPLE (HOW YOU MUST RESPOND)
+##############################################################################
+User: Find the hidden key.
+System: [Context Status: working tokens=150, threshold=8000]
+Assistant: I need to search the current room for the hidden key. Let's start by looking at the desk.
+<tool_call>
+{"name": "execute_action", "arguments": {"action": "go to desk"}}
+</tool_call>
+System: You arrive at the desk.
+Assistant: Now I will open the drawer to check inside.
+<tool_call>
+{"name": "execute_action", "arguments": {"action": "open drawer"}}
+</tool_call>
+
+>> NEVER send a response without a <tool_call> block! <<
 """
 
 # ---------------------------------------------------------------------------

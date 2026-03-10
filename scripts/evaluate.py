@@ -29,7 +29,7 @@ from src.training.rewards import RewardEngine
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate Memex agent")
-    parser.add_argument("--model", type=str, default="qwen2.5:7b")
+    parser.add_argument("--model", type=str, default="qwen2.5:3b")
     parser.add_argument("--base-url", type=str,
                         default="http://localhost:11434/v1")
     parser.add_argument("--env", type=str, default="stress_test",

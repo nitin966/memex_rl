@@ -79,7 +79,10 @@ class ToolParser:
             return result
 
         if has_open and not has_close:
-            errors.append("Tag mismatch: <tool_call> without closing </tool_call>.")
+            # Small models often stop generating right before the closing tag.
+            # We auto-append it to salvage the JSON silently without penalty.
+            raw_output += f"\n{self._CLOSE_TAG}"
+            has_close = True
         elif has_close and not has_open:
             errors.append("Tag mismatch: </tool_call> without opening <tool_call>.")
 
@@ -93,6 +96,12 @@ class ToolParser:
 
             # Parse the JSON inside the tags
             json_str = match.group(1).strip()
+            # Clean involuntary Markdown JSON blocks from smaller models
+            if json_str.startswith("```json") and json_str.endswith("```"):
+                json_str = json_str[len("```json"):-3].strip()
+            elif json_str.startswith("```") and json_str.endswith("```"):
+                json_str = json_str[3:-3].strip()
+
             tool_call, json_errors = self._parse_tool_json(json_str)
             errors.extend(json_errors)
             if tool_call:
@@ -109,6 +118,12 @@ class ToolParser:
                 if self._CLOSE_TAG in after_open:
                     after_open = after_open[:after_open.find(self._CLOSE_TAG)]
                 json_str = after_open.strip()
+                # Clean involuntary Markdown blocks
+                if json_str.startswith("```json") and json_str.endswith("```"):
+                    json_str = json_str[len("```json"):-3].strip()
+                elif json_str.startswith("```") and json_str.endswith("```"):
+                    json_str = json_str[3:-3].strip()
+
                 if json_str:
                     tool_call, json_errors = self._parse_tool_json(json_str)
                     errors.extend(json_errors)

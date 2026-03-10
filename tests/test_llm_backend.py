@@ -86,7 +86,7 @@ class TestOpenAIBackendWithOllama:
     """Integration tests that require Ollama running locally.
 
     These tests are automatically skipped if Ollama isn't available.
-    To run: start Ollama with a model (e.g., `ollama run qwen2.5:7b`)
+    To run: start Ollama with a model (e.g., `ollama run qwen2.5:3b`)
     then run: pytest tests/test_llm_backend.py -v -k "ollama"
     """
 

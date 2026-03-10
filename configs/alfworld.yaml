@@ -10,7 +10,7 @@ agent:
 
 llm:
   backend: "openai"
-  model: "qwen2.5:7b"
+  model: "qwen2.5:3b"
   base_url: "http://localhost:11434/v1"
   api_key: "ollama"
 

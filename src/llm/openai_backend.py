@@ -43,7 +43,7 @@ class OpenAIBackend(LLMBackend):
 
     def __init__(
         self,
-        model: str = "qwen2.5:7b",
+        model: str = "qwen2.5:3b",
         base_url: str | None = None,
         api_key: str | None = None,
         default_temperature: float = 0.7,

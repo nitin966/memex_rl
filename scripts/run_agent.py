@@ -72,7 +72,7 @@ def main():
     parser.add_argument("--env", type=str, default="stress_test",
                         choices=["stress_test", "alfworld"],
                         help="Environment to run (default: stress_test)")
-    parser.add_argument("--model", type=str, default="qwen2.5:7b",
+    parser.add_argument("--model", type=str, default="qwen2.5:3b",
                         help="Ollama model name")
     parser.add_argument("--base-url", type=str,
                         default="http://localhost:11434/v1",
@@ -98,7 +98,7 @@ def main():
 
     # LLM config (CLI overrides YAML)
     llm_cfg = config.get("llm", {})
-    model = args.model or llm_cfg.get("model", "qwen2.5:7b")
+    model = args.model or llm_cfg.get("model", "qwen2.5:3b")
     base_url = args.base_url or llm_cfg.get("base_url", "http://localhost:11434/v1")
 
     print(f"🧠 Memex Agent — {model} via {base_url}")
