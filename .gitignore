@@ -33,3 +33,5 @@ Thumbs.db
 
 # Project-specific
 *.log
+checkpoints/
+data/

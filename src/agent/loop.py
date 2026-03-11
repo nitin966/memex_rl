@@ -85,7 +85,7 @@ class MemexAgent:
         """
         # ── Lines 4-6: Initialize ──────────────────────────────────────
         store = self._store_factory or DictStore()
-        controller = MemoryController(
+        self.controller = MemoryController(
             store=store,
             tokenizer=self.tokenizer,
             context_window=self.config.context_window,
@@ -103,7 +103,7 @@ class MemexAgent:
         task_instruction = self.env.reset(task_id)
 
         # M ← [m₀, u]
-        controller.reset(system_prompt=system_prompt, task_instruction=task_instruction)
+        self.controller.reset(system_prompt=system_prompt, task_instruction=task_instruction)
 
         # Tracking
         answer: bool | None = None
@@ -114,10 +114,10 @@ class MemexAgent:
         # ── Line 7: Main loop ──────────────────────────────────────────
         for t in range(self.config.max_steps):
             # Line 8: Append ContextStatus(M, τ)
-            controller.inject_context_status()
+            self.controller.inject_context_status()
 
             # Line 9: Agent emits thinking z_t and tool call c_t
-            messages = controller.get_messages()
+            messages = self.controller.get_messages()
             raw_output = self.llm.generate(
                 messages=messages,
                 temperature=self.config.temperature,
@@ -131,7 +131,7 @@ class MemexAgent:
             format_errors = parse_result.format_errors
 
             # Line 10: Append to working context
-            controller.append_assistant(raw_output)
+            self.controller.append_assistant(raw_output)
 
             # Handle no valid tool call
             if tool_call is None:
@@ -140,12 +140,12 @@ class MemexAgent:
                     "You MUST include a tool call in <tool_call> tags. "
                     f"Parse errors: {'; '.join(format_errors)}"
                 )
-                controller.append_tool_result(error_msg, tool_name="system")
+                self.controller.append_tool_result(error_msg, tool_name="system")
                 current_segment_steps.append(Step(
                     thinking=thinking,
                     tool_call=ToolCall(name="_error", arguments={}),
                     observation=error_msg,
-                    context_tokens=controller.working_token_count(),
+                    context_tokens=self.controller.working_token_count(),
                     format_errors=format_errors,
                 ))
                 continue
@@ -155,7 +155,7 @@ class MemexAgent:
                 # Save current segment before compression
                 segments.append(Segment(
                     segment_idx=current_segment_idx,
-                    prefix=controller.get_prefix(),
+                    prefix=self.controller.get_prefix(),
                     steps=current_segment_steps,
                 ))
                 current_segment_steps = []
@@ -166,17 +166,17 @@ class MemexAgent:
                 db_blocks_raw = tool_call.arguments.get("db_blocks", [])
                 memory_blocks = self._parse_memory_blocks(db_blocks_raw)
 
-                result = controller.compress_experience(
+                result = self.controller.compress_experience(
                     summary=summary,
                     memory_blocks=memory_blocks,
                 )
-                controller.append_tool_result(result, tool_name="CompressExperience")
+                self.controller.append_tool_result(result, tool_name="CompressExperience")
 
                 current_segment_steps.append(Step(
                     thinking=thinking,
                     tool_call=tool_call,
                     observation=result,
-                    context_tokens=controller.working_token_count(),
+                    context_tokens=self.controller.working_token_count(),
                     format_errors=format_errors,
                 ))
                 logger.info(f"Step {t}: CompressExperience — {result}")
@@ -184,13 +184,13 @@ class MemexAgent:
             # ── Lines 15-17: ReadExperience ────────────────────────────
             elif tool_call.name == "ReadExperience":
                 db_index = tool_call.arguments.get("db_index", "")
-                content = controller.read_experience(db_index)
+                content = self.controller.read_experience(db_index)
 
                 current_segment_steps.append(Step(
                     thinking=thinking,
                     tool_call=tool_call,
                     observation=content,
-                    context_tokens=controller.working_token_count(),
+                    context_tokens=self.controller.working_token_count(),
                     format_errors=format_errors,
                 ))
                 logger.info(f"Step {t}: ReadExperience({db_index})")
@@ -203,7 +203,7 @@ class MemexAgent:
                     thinking=thinking,
                     tool_call=tool_call,
                     observation=f"Episode finished. success={answer}",
-                    context_tokens=controller.working_token_count(),
+                    context_tokens=self.controller.working_token_count(),
                     format_errors=format_errors,
                 ))
                 logger.info(f"Step {t}: finish(success={answer})")
@@ -214,7 +214,7 @@ class MemexAgent:
                 action = tool_call.arguments.get("action", str(tool_call.arguments))
                 step_result = self.env.step(action)
 
-                controller.append_tool_result(
+                self.controller.append_tool_result(
                     step_result.observation, tool_name=tool_call.name
                 )
 
@@ -222,7 +222,7 @@ class MemexAgent:
                     thinking=thinking,
                     tool_call=tool_call,
                     observation=step_result.observation,
-                    context_tokens=controller.working_token_count(),
+                    context_tokens=self.controller.working_token_count(),
                     format_errors=format_errors,
                 ))
                 logger.debug(f"Step {t}: {tool_call.name}({action}) → {step_result.observation[:80]}")
@@ -235,7 +235,7 @@ class MemexAgent:
         # ── Line 24: Terminal segment ──────────────────────────────────
         segments.append(Segment(
             segment_idx=current_segment_idx,
-            prefix=controller.get_prefix(),
+            prefix=self.controller.get_prefix(),
             steps=current_segment_steps,
         ))
 
