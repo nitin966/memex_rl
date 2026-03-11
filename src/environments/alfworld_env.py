@@ -68,8 +68,8 @@ class ALFWorldModifiedEnv(Environment):
             self._init_alfworld()
         except ImportError:
             logger.warning(
-                "ALFWorld not installed. Use ALFWorldMockEnv for testing, "
-                "or install with: pip install memex-rl[alfworld]"
+                "ALFWorld not installed. You must install it to use this environment: "
+                "pip install 'memex-rl[alfworld]'"
             )
             self._env = None
 
@@ -99,20 +99,22 @@ class ALFWorldModifiedEnv(Environment):
 
         Paper Modification 2: Initial observation hidden.
         """
+        if self._env is None:
+            raise RuntimeError(
+                "ALFWorld is not installed. Cannot reset environment. "
+                "Please install it via: pip install 'memex-rl[alfworld]'"
+            )
+            
         self._done = False
         self._reward = 0.0
         self._look_counts = {}
         self._current_location = "unknown"
 
-        if self._env is not None:
-            obs, info = self._env.reset()
-            if isinstance(obs, list):
-                obs = obs[0]
-            self._task_desc = self._extract_task(obs)
-            self._task_id = task_id or self._task_desc[:50]
-        else:
-            self._task_desc = task_id or "Mock ALFWorld task"
-            self._task_id = task_id or "mock_task"
+        obs, info = self._env.reset()
+        if isinstance(obs, list):
+            obs = obs[0]
+        self._task_desc = self._extract_task(obs)
+        self._task_id = task_id or self._task_desc[:50]
 
         # Modification 2: Return only task description, not full observation
         if self._hide_initial_obs:
@@ -121,6 +123,12 @@ class ALFWorldModifiedEnv(Environment):
 
     def step(self, action: str) -> StepResult:
         """Execute action with all 4 paper modifications applied."""
+        if self._env is None:
+            raise RuntimeError(
+                "ALFWorld is not installed. Cannot execute step. "
+                "Please install it via: pip install 'memex-rl[alfworld]'"
+            )
+            
         if self._done:
             return StepResult(
                 observation="Episode already finished.",
@@ -146,18 +154,13 @@ class ALFWorldModifiedEnv(Environment):
             self._look_counts[self._current_location] = count + 1
 
         # Execute in ALFWorld
-        if self._env is not None:
-            obs, reward, done, info = self._env.step([action])
-            if isinstance(obs, list):
-                obs = obs[0]
-            if isinstance(reward, list):
-                reward = reward[0]
-            if isinstance(done, list):
-                done = done[0]
-        else:
-            obs = f"You performed: {action}"
-            reward = 0.0
-            done = False
+        obs, reward, done, info = self._env.step([action])
+        if isinstance(obs, list):
+            obs = obs[0]
+        if isinstance(reward, list):
+            reward = reward[0]
+        if isinstance(done, list):
+            done = done[0]
 
         # Modification 1: Hide echoed commands
         if self._hide_commands:

@@ -12,6 +12,15 @@ from src.environments.alfworld_env import ALFWorldModifiedEnv
 from src.environments.stress_test import StressTestEnv
 from src.environments.base import Environment
 
+class MockALFWorldBackend:
+    """Mock for the inner ALFWorld environment to allow testing the wrapper logic."""
+    def reset(self):
+        return ["Your task is to: test task description"], {}
+        
+    def step(self, action):
+        return [f"You performed: {action[0]}"], [0.0], [False], {}
+
+
 
 # ── ALFWorld Modified Environment ──────────────────────────────────────────
 
@@ -25,6 +34,8 @@ class TestALFWorldModifiedEnv:
             hide_initial_obs=True,
             hide_commands=True,
         )
+        # Inject mock to bypass the RuntimeError guard during unit tests without ALFWorld
+        self.env._env = MockALFWorldBackend()
 
     def test_is_environment(self):
         assert isinstance(self.env, Environment)
@@ -64,6 +75,7 @@ class TestALFWorldModifiedEnv:
     def test_modification_4_truncation(self):
         """Long observations should be truncated."""
         env = ALFWorldModifiedEnv(max_obs_tokens=10)
+        env._env = MockALFWorldBackend()
         env.reset(task_id="test_task")
         # The mock won't produce a long observation, but let's test the
         # truncation method directly
@@ -74,6 +86,7 @@ class TestALFWorldModifiedEnv:
     def test_modification_1_strip_command_echo(self):
         """Command echoes should be stripped from observations."""
         env = ALFWorldModifiedEnv(hide_commands=True)
+        env._env = MockALFWorldBackend()
         # Test the internal stripping method
         obs = "> go to desk 1\nYou arrive at desk 1."
         stripped = env._strip_command_echo(obs, "go to desk 1")
