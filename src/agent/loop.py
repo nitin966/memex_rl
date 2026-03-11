@@ -69,7 +69,7 @@ class MemexAgent:
         self.env = environment
         self.config = config or AgentConfig()
         self.parser = ToolParser()
-        self.tokenizer = Tokenizer()
+        self.tokenizer = Tokenizer(model=self.llm.model_name)
 
         # Store is created fresh per episode if not provided
         self._store_factory = store

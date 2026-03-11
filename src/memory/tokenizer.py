@@ -24,14 +24,29 @@ class Tokenizer:
         model: str = "gpt-4",
         encoding_name: str | None = None,
     ) -> None:
+        self.is_hf = False
+        self._hf_name = ""
         if encoding_name:
             self._enc = tiktoken.get_encoding(encoding_name)
         else:
             try:
                 self._enc = tiktoken.encoding_for_model(model)
             except KeyError:
-                # Fallback to cl100k_base for unknown models
-                self._enc = tiktoken.get_encoding("cl100k_base")
+                if "qwen" in model.lower():
+                    from transformers import AutoTokenizer
+                    # Map ollama tags to HF hub models if needed
+                    hf_path = model
+                    if ":" in model or "/" not in model:
+                        hf_path = "Qwen/Qwen2.5-3B-Instruct"  # Safe default
+                        if "7b" in model.lower():
+                            hf_path = "Qwen/Qwen2.5-7B-Instruct"
+                    
+                    self._enc = AutoTokenizer.from_pretrained(hf_path)
+                    self.is_hf = True
+                    self._hf_name = hf_path
+                else:
+                    # Fallback to cl100k_base for unknown models
+                    self._enc = tiktoken.get_encoding("cl100k_base")
 
     def count(self, text: str) -> int:
         """Count the number of tokens in a text string."""
@@ -75,4 +90,4 @@ class Tokenizer:
     @property
     def encoding_name(self) -> str:
         """Name of the tiktoken encoding being used."""
-        return self._enc.name
+        return self._hf_name if self.is_hf else self._enc.name

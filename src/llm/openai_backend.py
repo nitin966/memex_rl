@@ -60,7 +60,7 @@ class OpenAIBackend(LLMBackend):
         self._model = model
         self._default_temperature = default_temperature
         self._default_max_tokens = default_max_tokens
-        self._tokenizer = Tokenizer()
+        self._tokenizer = Tokenizer(model=model)
 
         # Resolve connection parameters
         resolved_base_url = base_url or os.environ.get(
