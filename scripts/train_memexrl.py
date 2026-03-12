@@ -98,16 +98,39 @@ def main():
         logger.info("Setting up Apple MLX LoRA backend...")
         try:
             import mlx.core as mx
+            from mlx.utils import tree_flatten
             import mlx.nn as nn
             import mlx.optimizers as optim
-            # Placeholder model — real LoRA training uses mlx_lm CLI.
-            # See README.md "Training Pipeline" section.
-            class DummyQwenLoRA(nn.Module):
-                def __init__(self):
-                    super().__init__()
-                    self.dummy_layer = nn.Linear(10, 10)
+            import mlx_lm
+            import mlx_lm.lora
+
+            logger.info(f"Loading base model {args.model} via mlx_lm...")
             
-            mlx_model = DummyQwenLoRA()
+            # Map Ollama tags to HF hub for mlx_lm if needed
+            hf_path = args.model
+            if ":" in args.model or "/" not in args.model:
+                hf_path = "Qwen/Qwen2.5-3B-Instruct"  # Fallback
+                if "7b" in args.model.lower():
+                    hf_path = "Qwen/Qwen2.5-7B-Instruct"
+                    
+            mlx_model, tokenizer = mlx_lm.load(hf_path)
+            
+            # Attach tokenizer to model instance so our MLXGRPOLoss can use it
+            mlx_model.tokenizer = tokenizer
+            
+            # Convert linear layers to LoRA layers
+            lora_config = {"keys": ["self_attn.q_proj", "self_attn.v_proj"]}
+            mlx_lm.lora.linear_to_lora_layers(
+                mlx_model, 
+                num_layers=4, 
+                config={"rank": 8, "alpha": 16, "scale": 16.0, "dropout": 0.0, **lora_config}
+            )
+            # Apply gradient checkpointing to reduce memory overhead
+            from mlx_lm.tuner.trainer import grad_checkpoint
+            if hasattr(mlx_model, "model") and hasattr(mlx_model.model, "layers"):
+                logger.info("Enabling gradient checkpointing for MLX.")
+                grad_checkpoint(mlx_model.model.layers[0])
+            
             mlx_optimizer = optim.Adam(learning_rate=grpo_config.learning_rate)
             
             trainer = MLXTrainerWrapper(
