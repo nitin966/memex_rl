@@ -48,7 +48,7 @@ class MLXGRPOLoss:
             prompt_text = seg.prefix
             completion_text = ""
             for step in seg.steps:
-                completion_text += f"\n<|im_start|>assistant\n<tool_call>\n{step.tool_call.model_dump_json()}\n</tool_call>\n{step.thinking}<|im_end|>\n"
+                completion_text += f"\n<|im_start|>assistant\n{step.thinking}\n<tool_call>\n{step.tool_call.model_dump_json()}\n</tool_call><|im_end|>\n"
                 
             # Tokenize using MLX LM's tokenizer
             # For this integration, we assume the model has a .tokenizer attribute
